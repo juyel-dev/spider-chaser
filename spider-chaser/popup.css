@@ -1,0 +1,118 @@
+* { box-sizing: border-box; }
+
+body {
+  width: 260px;
+  margin: 0;
+  padding: 14px 16px 12px;
+  font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #e9e4de;
+  background: #1c1713;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.control { margin-bottom: 12px; }
+
+.row { display: flex; align-items: center; justify-content: space-between; }
+
+.label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.label output { color: #d9a45b; font-variant-numeric: tabular-nums; }
+
+input[type="range"] {
+  width: 100%;
+  accent-color: #d9a45b;
+  margin: 0;
+}
+
+/* on/off switch */
+.switch { position: relative; display: inline-block; width: 38px; height: 22px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; inset: 0;
+  background: #4a413a; border-radius: 22px;
+  transition: background .15s; cursor: pointer;
+}
+.slider::before {
+  content: ""; position: absolute;
+  width: 16px; height: 16px; left: 3px; top: 3px;
+  background: #fff; border-radius: 50%;
+  transition: transform .15s;
+}
+.switch input:checked + .slider { background: #d9a45b; }
+.switch input:checked + .slider::before { transform: translateX(16px); }
+
+button {
+  width: 100%;
+  padding: 7px 0;
+  margin-top: 2px;
+  color: #e9e4de;
+  background: #2c2520;
+  border: 1px solid #4a413a;
+  border-radius: 6px;
+  cursor: pointer;
+}
+button:hover { background: #382f28; }
+
+.site { margin-bottom: 12px; }
+.site .label output {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#blockedBox { margin-bottom: 12px; }
+#blockedBox[hidden] { display: none; }
+
+#blockedList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 84px;
+  overflow-y: auto;
+}
+
+#blockedList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 0;
+  color: #c9bfb4;
+}
+
+#blockedList li span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+button.x {
+  width: auto;
+  margin: 0 0 0 8px;
+  padding: 0 7px;
+  line-height: 20px;
+  border-radius: 4px;
+}
+
+.hint {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: #9b9188;
+  text-align: center;
+}

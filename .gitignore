@@ -1,0 +1,8 @@
+# local-only / generated
+old-versions/
+PLAN.md
+publish/*.zip
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
