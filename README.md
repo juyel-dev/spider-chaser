@@ -50,4 +50,4 @@ Settings are stored only in your browser. See [publish/PRIVACY.md](publish/PRIVA
 
 ## License
 
-[MIT](LICENSE) © 2026 juyel-dev
+[MIT](LICENSE) © 2026 Juyel Hossain
