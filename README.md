@@ -16,6 +16,8 @@ Spiders never block clicks and never touch the page content — they are drawn o
 
 ## Install (from source)
 
+Or grab `spider-chaser-1.6.0.zip` from the [Releases](https://github.com/juyel-dev/spider-chaser/releases) page, unzip it, and load that folder the same way (steps 2–4 below).
+
 1. Download or clone this repository
 2. Open `chrome://extensions` and turn on **Developer mode**
 3. Click **Load unpacked** and choose the `spider-chaser/` folder
@@ -48,4 +50,4 @@ Settings are stored only in your browser. See [publish/PRIVACY.md](publish/PRIVA
 
 ## License
 
-No license has been chosen yet.
+[MIT](LICENSE) © 2026 juyel-dev
