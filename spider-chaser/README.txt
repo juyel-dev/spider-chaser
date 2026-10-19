@@ -1,4 +1,4 @@
-SPIDER CHASER  (v1.6.0)
+SPIDER CHASER  (v1.7.0)
 ======================
 
 Realistic spiders that walk across any webpage and stalk your mouse cursor.
@@ -28,6 +28,10 @@ WHAT THE SPIDERS DO
   lands, or climbs back up and drops somewhere else.
   Clicking near a hanging spider makes it fall and run.
 - Several spiders keep their distance from each other.
+- Butterfly: a colourful butterfly (monarch, blue, yellow or purple) flutters around the page
+  on its own: it flaps, glides with open wings, sometimes lands and slowly opens and closes
+  its wings, keeps away from the spiders, and flies off after a minute or two. It comes back
+  later. Switch it off in the popup and it politely flies away.
 - Flies: a small fly flies in now and then, zig-zags around and lands. A nearby spider
   creeps up on it in short bursts and pounces. The fly may notice in time and escape.
   A catch is eaten for a few seconds (wrapped in silk).
@@ -43,8 +47,9 @@ POPUP (toolbar icon)
 - Size  (0.6x - 2x)
 - Spiders (1 - 6)
 - Web drops on/off
-- Flies (prey) on/off
+- Flies on/off
 - Webs on/off
+- Butterfly on/off
 - This site ............... "Disable on this site" / "Enable on this site"
 - Disabled sites .......... list of sites where spiders are off (click x to enable again)
 - Reset to default ........ resets the sliders (keeps the disabled-sites list)

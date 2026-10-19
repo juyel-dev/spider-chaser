@@ -45,7 +45,7 @@
   // ------------------------------------------------------------------
   // Settings (edited from the popup, stored in chrome.storage.local)
   // ------------------------------------------------------------------
-  const DEFAULTS = { enabled: true, speed: 1, size: 1, count: 1, drops: true, flies: true, webs: true, blocked: [] };
+  const DEFAULTS = { enabled: true, speed: 1, size: 1, count: 1, drops: true, flies: true, webs: true, butterfly: true, blocked: [] };
 
   // sites where the spiders are switched off (managed from the popup)
   const hostKey = (location.hostname || '').toLowerCase().replace(/^www\./, '');
@@ -103,8 +103,8 @@
 
     // silk thread used for web drops (sits below the spider canvas)
     const thread = document.createElement('div');
-    thread.style.cssText = 'position:fixed;left:0;top:0;width:1.4px;height:1px;display:none;pointer-events:none;' +
-      'transform-origin:0 0;will-change:transform;background:rgba(240,240,240,.92);box-shadow:0 0 1.5px rgba(0,0,0,.65)';
+    thread.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;display:none;pointer-events:none;' +
+      'transform-origin:0 0;will-change:transform;background:rgba(238,238,238,.95);box-shadow:0 0 0 .6px rgba(70,70,70,.6)';
     shadow.appendChild(thread);
 
     const canvas = document.createElement('canvas');
@@ -234,7 +234,7 @@
       const ns = st.speed / k;                       // speed in "size 1" units
       const vx = Math.cos(st.heading), vy = Math.sin(st.heading);
       const lead = clamp(ns * 0.07, 0, 14) * k;
-      const landing = l => limitReach(l, l.rx + vx * lead, l.ry + vy * lead, reach * 0.9);
+      const landing = l => limitReach(l, l.rx + vx * lead, l.ry + vy * lead, reach * 0.85);
 
       let busy = false;
 
@@ -267,7 +267,7 @@
       for (const l of legs) if (l.stepping) groupStepping[l.group] = true;
 
       // one gait group swings at a time, its partners follow together
-      const thr = (8 + ns * 0.012) * k;
+      const thr = (6 + ns * 0.01) * k;
       for (let pass = 0; pass < 2; pass++) {
         for (const l of legs) {
           if (l.stepping) continue;
@@ -275,7 +275,7 @@
           const err = Math.hypot(tgt[0] - l.fx, tgt[1] - l.fy);
           const stretch = Math.hypot(l.fx - l.hx, l.fy - l.hy);
           const limit = groupStepping[l.group] ? thr * 0.45 : thr;
-          const forced = stretch > reach * 0.97;
+          const forced = stretch > reach * 0.93;
           if (forced || (err > limit && !groupStepping[1 - l.group])) {
             l.stepping = true;
             l.t = 0;
@@ -283,7 +283,7 @@
             l.sy = l.fy;
             l.tx = tgt[0];
             l.ty = tgt[1];
-            l.dur = clamp(0.2 - ns / 1800, 0.07, 0.18);
+            l.dur = clamp(0.14 - ns / 2500, 0.05, 0.12);
             groupStepping[l.group] = true;
             busy = true;
           }
@@ -398,6 +398,8 @@
       build.state = 'build';
       build.time = 0;
       build.last = null;
+      build.segA = [hx, hy];   // the first leg starts at the hub
+      build.segT = 0;
     }
 
     function finishBuild() {
@@ -444,7 +446,9 @@
       const dx = tailX - ax, dy = tailY - ay;
       const len = Math.hypot(dx, dy);
       const ang = Math.atan2(-dx, dy);
-      thread.style.transform = `translate(${ax}px,${ay}px) rotate(${ang}rad) scale(1,${len})`;
+      // the thread is a 1px-wide box as long as needed (no scaling, so its outline stays crisp)
+      thread.style.height = len + 'px';
+      thread.style.transform = `translate(${ax}px,${ay}px) rotate(${ang}rad)`;
     }
 
     function enterWait() {
@@ -601,7 +605,7 @@
         // walk straight up and out of the screen
         mode = 'climb';
         desiredHeading = -Math.PI / 2;
-        desiredSpeed = 250;
+        desiredSpeed = 170;
         turnRate = 6;
         if (st.y < -42 * k) {
           enterWait();
@@ -616,7 +620,7 @@
         if ((st.y < 90 && fy < 0) || (st.y > H - 90 && fy > 0)) fy = -fy;
         beh.fleeDir = Math.atan2(fy, fx);
         desiredHeading = beh.fleeDir;
-        desiredSpeed = 400;
+        desiredSpeed = 260;
         turnRate = 10;
       } else if (hunt.eatT > 0) {
         // eating the catch: stand still, front legs busy
@@ -647,7 +651,7 @@
           mode = 'eat';
         } else if (hunt.phase === 'pounce') {
           mode = 'dash';
-          desiredSpeed = 620;
+          desiredSpeed = 420;
           turnRate = 12;
           hunt.dashT -= dt;
           if (hunt.dashT <= 0) {
@@ -682,7 +686,7 @@
           const hdx = build.hubX - st.x, hdy = build.hubY - st.y;
           const hd = Math.hypot(hdx, hdy);
           desiredHeading = Math.atan2(hdy, hdx);
-          desiredSpeed = clamp(80 + hd / k * 0.4, 80, 220);
+          desiredSpeed = clamp(80 + hd / k * 0.4, 80, 170);
           turnRate = 5;
           if (hd < 10 * k) beginWeave();
           else if (build.time > 40) endBuild();
@@ -693,6 +697,13 @@
           desiredSpeed = 95;
           turnRate = 7;
           if (Math.hypot(wdx, wdy) < 7 * k) {
+            // leg finished: complete its thread, start the next leg from this point
+            if (build.segA && build.segT < 1) {
+              const A = build.segA;
+              webSegment(build.web, A[0] + (w[0] - A[0]) * build.segT, A[1] + (w[1] - A[1]) * build.segT, w[0], w[1]);
+            }
+            build.segA = [w[0], w[1]];
+            build.segT = 0;
             build.wi++;
             if (build.wi >= build.wp.length) finishBuild();
           }
@@ -708,7 +719,7 @@
         beh.dashTime -= dt;
         mode = 'dash';
         desiredHeading = angToPtr;
-        desiredSpeed = 560;
+        desiredSpeed = 380;
         turnRate = 8;
         if (dist < stopDist) beh.dashTime = 0;
         if (beh.dashTime <= 0) {
@@ -740,7 +751,7 @@
           desiredHeading = angToPtr;
           if (beh.phase === 'go') {
             mode = 'stalk';
-            desiredSpeed = clamp(100 + (dist / k - pers.stop) * 0.8, 100, 300);
+            desiredSpeed = clamp(70 + (dist / k - pers.stop) * 0.35, 70, 170);
           } else {
             mode = 'pause';
             desiredSpeed = 0;
@@ -797,15 +808,23 @@
       st.x = clamp(st.x, m, Math.max(m, W - m));
       st.y = clamp(st.y, drop.state === 'climb' ? -90 * k : m, Math.max(m, H - m));
 
-      // while weaving, the thread is spun from the spinnerets
-      if (build.state === 'build' && build.web && st.speed > 5) {
-        const tx = st.x - Math.cos(st.heading) * 19 * k;
-        const ty = st.y - Math.sin(st.heading) * 19 * k;
-        if (!build.last) {
-          build.last = [tx, ty];
-        } else if (Math.hypot(tx - build.last[0], ty - build.last[1]) >= 2) {
-          webSegment(build.web, build.last[0], build.last[1], tx, ty);
-          build.last = [tx, ty];
+      // while weaving, the thread is spun from the spinnerets: it is drawn as a clean straight
+      // line along the current leg of the path, as far as the spinnerets have got
+      if (build.state === 'build' && build.web && build.segA) {
+        const B = build.wp[build.wi];
+        if (B) {
+          const tx = st.x - Math.cos(st.heading) * 19 * k;
+          const ty = st.y - Math.sin(st.heading) * 19 * k;
+          const A = build.segA;
+          const abx = B[0] - A[0], aby = B[1] - A[1];
+          const len2 = abx * abx + aby * aby;
+          if (len2 > 1) {
+            const t = clamp(((tx - A[0]) * abx + (ty - A[1]) * aby) / len2, 0, 1);
+            if (t > build.segT + 0.01) {
+              webSegment(build.web, A[0] + abx * build.segT, A[1] + aby * build.segT, A[0] + abx * t, A[1] + aby * t);
+              build.segT = t;
+            }
+          }
         }
       }
 
@@ -1154,6 +1173,7 @@
     cfg.drops = s.drops !== false;
     cfg.flies = s.flies !== false;
     cfg.webs = s.webs !== false;
+    cfg.butterfly = s.butterfly !== false;
     cfg.blocked = Array.isArray(s.blocked) ? s.blocked : [];
     blockedHere = !!hostKey && cfg.blocked.includes(hostKey);
     cfg.speed = clamp(Number(s.speed) || 1, 0.4, 2.5);
@@ -1501,16 +1521,18 @@
     return w;
   }
 
-  // draw one thread (coordinates are page/viewport coordinates)
+  // draw one thread (coordinates are page/viewport coordinates): a thin pale line with a faint
+  // dark edge so it shows on light and dark pages alike (no blur: overlaps stay crisp)
   function webSegment(w, x1, y1, x2, y2) {
     const c = w.ctx;
-    c.strokeStyle = 'rgba(250,250,250,0.9)';
-    c.lineWidth = 1;
-    c.shadowColor = 'rgba(0,0,0,0.45)';
-    c.shadowBlur = 1.5;
     c.beginPath();
     c.moveTo(x1 - w.ox, y1 - w.oy);
     c.lineTo(x2 - w.ox, y2 - w.oy);
+    c.strokeStyle = 'rgba(60,60,60,0.35)';
+    c.lineWidth = 1.7;
+    c.stroke();
+    c.strokeStyle = 'rgba(250,250,250,0.95)';
+    c.lineWidth = 0.8;
     c.stroke();
   }
 
@@ -1538,13 +1560,276 @@
     }
   }
 
+  // ------------------------------------------------------------------
+  // Butterfly: a colourful visitor that flutters around on its own,
+  // lands now and then, keeps away from the spiders and leaves after a while
+  // ------------------------------------------------------------------
+  const BF_C = 96;          // canvas size (CSS px)
+  const BF_SCALE = 1.35;    // butterfly size
+  const BF_PALETTES = [
+    { a: '#ff9d1c', b: '#d65a00', edge: '#1b0f08', dots: '#fff4e0', vein: 'rgba(30,15,5,0.55)' },    // monarch
+    { a: '#8fd3ff', b: '#1d5fe0', edge: '#0b1530', dots: '#e8f6ff', vein: 'rgba(5,15,50,0.5)' },      // blue morpho
+    { a: '#fff08a', b: '#f0b400', edge: '#241a05', dots: '#fffbe0', vein: 'rgba(40,25,0,0.55)' },    // swallowtail
+    { a: '#ffc2ee', b: '#b23fd1', edge: '#2a0a33', dots: '#fff0fb', vein: 'rgba(45,10,60,0.5)' }      // orchid
+  ];
+  // wing outlines for one side (body axis = x, wing spreads towards +y)
+  const WING_FORE = new Path2D('M4 1.5 C12 4 13 15 5 19 C1 19 -3 13 -3 6 C-3 3 0 2 4 1.5 Z');
+  const WING_HIND = new Path2D('M-2 1.5 C-4 6 -9 14 -12 15 C-16 15 -17 9 -12 5 C-9 3 -6 2 -2 1.5 Z');
+  const FORE_VEINS = [[3, 2, 11, 9], [3, 2, 8, 15.5], [2, 2, 2, 17], [2, 2, -2, 10]];
+  const HIND_VEINS = [[-2, 2, -8, 6.5], [-2, 2, -11, 10.5], [-2, 2, -6.5, 13]];
+  const FORE_DOTS = [[9.5, 10.8], [7.4, 15.6], [11.2, 6.2]];
+  const HIND_DOTS = [[-12, 10.5], [-10.4, 13.2]];
+
+  let butterfly = null;
+  let bfCd = rand(3, 6);    // seconds until it shows up
+
+  function createButterfly() {
+    const W = window.innerWidth, H = window.innerHeight;
+    const side = Math.floor(Math.random() * 4);
+    let x, y;
+    if (side === 0) { x = -50; y = rand(80, Math.max(81, H - 80)); }
+    else if (side === 1) { x = W + 50; y = rand(80, Math.max(81, H - 80)); }
+    else if (side === 2) { x = rand(80, Math.max(81, W - 80)); y = -50; }
+    else { x = rand(80, Math.max(81, W - 80)); y = H + 50; }
+
+    const canvas = document.createElement('canvas');
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(BF_C * dpr);
+    canvas.height = Math.round(BF_C * dpr);
+    canvas.style.width = BF_C + 'px';
+    canvas.style.height = BF_C + 'px';
+    const bctx = canvas.getContext('2d');
+    bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    shadow.appendChild(canvas);
+
+    return {
+      x, y,
+      heading: Math.atan2(H / 2 - y, W / 2 - x) + rand(-0.4, 0.4),
+      tv: 0, sp: 0, t: rand(0, 10),
+      flap: rand(0, TAU), openness: 1, gliding: false, glideT: rand(1, 3),
+      state: 'fly',              // 'fly' | 'rest' | 'leave'
+      stateT: rand(10, 22),      // time until it may land
+      restT: 0,
+      life: rand(90, 150),       // seconds on screen before it flies away
+      exitDir: 0,
+      pal: BF_PALETTES[Math.floor(Math.random() * BF_PALETTES.length)],
+      canvas, ctx: bctx
+    };
+  }
+
+  // returns false when the butterfly has left the screen
+  function updateButterfly(b, dt) {
+    const W = window.innerWidth, H = window.innerHeight;
+    b.t += dt;
+
+    // wings: flapping, now and then gliding with open wings; slow open/close when resting
+    if (b.state === 'rest') {
+      b.openness = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(b.t * 1.7));
+    } else {
+      b.glideT -= dt;
+      if (b.glideT <= 0) {
+        b.gliding = !b.gliding;
+        b.glideT = b.gliding ? rand(0.6, 1.4) : rand(2.5, 5);
+      }
+      if (b.gliding) {
+        b.openness += (1 - b.openness) * Math.min(1, dt * 6);
+      } else {
+        b.flap += dt * TAU * 5.5 * MOTION_SCALE;
+        b.openness = 0.2 + 0.8 * Math.abs(Math.cos(b.flap));
+      }
+    }
+
+    const m = 70;
+    const inside = b.x > m && b.x < W - m && b.y > m && b.y < H - m;
+    let targetSp = 0;
+
+    if (b.state === 'fly') {
+      // lazy, meandering flight
+      b.tv += rand(-5, 5) * dt;
+      b.tv *= Math.max(0, 1 - 1.5 * dt);
+      b.tv = clamp(b.tv, -1.7, 1.7);
+      b.heading = wrapAngle(b.heading + b.tv * dt);
+      if (!inside) {
+        const toC = Math.atan2(H / 2 - b.y, W / 2 - b.x);
+        b.heading = wrapAngle(b.heading + clamp(wrapAngle(toC - b.heading), -2.2 * dt, 2.2 * dt));
+      }
+      targetSp = 50 + 35 * Math.sin(b.t * 0.9) + (b.gliding ? 0 : 30 * Math.abs(Math.sin(b.flap)));
+
+      // keep away from spiders
+      for (const s of spiders) {
+        const dx = b.x - s.st.x, dy = b.y - s.st.y;
+        if (Math.hypot(dx, dy) < 110 * s.k) {
+          b.heading = wrapAngle(b.heading + clamp(wrapAngle(Math.atan2(dy, dx) - b.heading), -3 * dt, 3 * dt));
+        }
+      }
+
+      b.life -= dt;
+      if (b.life <= 0) {
+        b.state = 'leave';
+        b.exitDir = Math.atan2(b.y - H / 2, b.x - W / 2);
+      }
+      b.stateT -= dt;
+      if (b.stateT <= 0) {
+        b.stateT = rand(10, 22);
+        if (inside && Math.random() < 0.45) {
+          b.state = 'rest';
+          b.restT = rand(4, 9);
+          b.gliding = false;
+        }
+      }
+    } else if (b.state === 'leave') {
+      b.heading = wrapAngle(b.heading + clamp(wrapAngle(b.exitDir - b.heading), -1.5 * dt, 1.5 * dt));
+      targetSp = 75;
+      if (b.x < -70 || b.x > W + 70 || b.y < -70 || b.y > H + 70) return false;
+    } else {
+      // resting on the page
+      b.restT -= dt;
+      let scared = false;
+      for (const s of spiders) {
+        if (Math.hypot(b.x - s.st.x, b.y - s.st.y) < 90 * s.k) scared = true;
+      }
+      if (b.restT <= 0 || scared) {
+        b.state = 'fly';
+        b.heading = rand(0, TAU);
+        b.stateT = rand(10, 22);
+        b.glideT = 0.4;
+      }
+    }
+
+    b.sp += (targetSp * MOTION_SCALE - b.sp) * Math.min(1, dt * 3);
+    b.x += Math.cos(b.heading) * b.sp * dt;
+    b.y += Math.sin(b.heading) * b.sp * dt;
+    return true;
+  }
+
+  function drawWing(c, wing, veins, dots, pal, grad) {
+    c.fillStyle = grad;
+    c.fill(wing);
+    c.save();
+    c.clip(wing);
+    c.strokeStyle = pal.vein;
+    c.lineWidth = 0.5;
+    c.beginPath();
+    for (const v of veins) {
+      c.moveTo(v[0], v[1]);
+      c.lineTo(v[2], v[3]);
+    }
+    c.stroke();
+    c.restore();
+    c.strokeStyle = 'rgba(255,255,255,0.45)';   // pale rim so it also shows on dark pages
+    c.lineWidth = 2.8;
+    c.lineJoin = 'round';
+    c.stroke(wing);
+    c.strokeStyle = pal.edge;
+    c.lineWidth = 1.4;
+    c.stroke(wing);
+    c.fillStyle = pal.dots;
+    for (const d of dots) {
+      c.beginPath();
+      c.arc(d[0], d[1], 0.8, 0, TAU);
+      c.fill();
+    }
+  }
+
+  function drawButterfly(b) {
+    const c = b.ctx;
+    const resting = b.state === 'rest';
+    const open = b.openness;
+    const pal = b.pal;
+    const ox = Math.round(b.x) - BF_C / 2;
+    const oy = Math.round(b.y) - BF_C / 2;
+    b.canvas.style.transform = `translate3d(${ox}px,${oy}px,0)`;
+    c.clearRect(0, 0, BF_C, BF_C);
+
+    const bx = b.x - ox;
+    const by = b.y - oy + (resting ? 0 : Math.sin(b.flap) * 1.6);   // little up-and-down bob
+    const rot = b.heading + (resting ? 0 : Math.sin(b.t * 3) * 0.06);
+
+    // soft shadow on the page
+    c.save();
+    c.translate(bx + 3, by + 10);
+    c.rotate(rot);
+    c.scale(BF_SCALE, BF_SCALE);
+    c.fillStyle = 'rgba(0,0,0,0.13)';
+    c.beginPath();
+    c.ellipse(-2, 0, 11, Math.max(1, 18 * open), 0, 0, TAU);
+    c.fill();
+    c.restore();
+
+    c.save();
+    c.translate(bx, by);
+    c.rotate(rot);
+    c.scale(BF_SCALE, BF_SCALE);
+
+    // wings (the flap squeezes them towards the body)
+    for (const sg of [1, -1]) {
+      c.save();
+      c.scale(1, sg * Math.max(0.05, open));
+      const g = c.createLinearGradient(0, 1, 0, 19);
+      g.addColorStop(0, pal.a);
+      g.addColorStop(1, pal.b);
+      drawWing(c, WING_HIND, HIND_VEINS, HIND_DOTS, pal, g);
+      drawWing(c, WING_FORE, FORE_VEINS, FORE_DOTS, pal, g);
+      c.restore();
+    }
+
+    // body, head and antennae (with a faint light glow so they show on dark pages)
+    c.shadowColor = 'rgba(255,255,255,0.7)';
+    c.shadowBlur = 2.5;
+    c.fillStyle = '#1a120d';
+    c.beginPath();
+    c.ellipse(-1, 0, 9, 1.7, 0, 0, TAU);
+    c.fill();
+    c.beginPath();
+    c.arc(5, 0, 2.2, 0, TAU);
+    c.fill();
+    c.beginPath();
+    c.arc(9.2, 0, 1.7, 0, TAU);
+    c.fill();
+    c.strokeStyle = '#1a120d';
+    c.lineWidth = 0.7;
+    c.lineCap = 'round';
+    for (const sg of [1, -1]) {
+      c.beginPath();
+      c.moveTo(10, sg * 0.8);
+      c.quadraticCurveTo(14, sg * 2, 16.5, sg * 5.5);
+      c.stroke();
+      c.beginPath();
+      c.arc(16.7, sg * 5.8, 0.9, 0, TAU);
+      c.fill();
+    }
+    c.shadowColor = 'rgba(0,0,0,0)';
+    c.shadowBlur = 0;
+    c.restore();
+  }
+
+  function updateButterflies(dt) {
+    if (cfg.butterfly && !butterfly) {
+      bfCd -= dt;
+      if (bfCd <= 0) butterfly = createButterfly();
+    }
+    if (!butterfly) return;
+    if (!cfg.butterfly && butterfly.state !== 'leave') {
+      // switched off: it politely flies away
+      butterfly.state = 'leave';
+      butterfly.exitDir = Math.atan2(butterfly.y - window.innerHeight / 2, butterfly.x - window.innerWidth / 2);
+    }
+    if (updateButterfly(butterfly, dt)) {
+      drawButterfly(butterfly);
+    } else {
+      butterfly.canvas.remove();
+      butterfly = null;
+      bfCd = rand(25, 70);
+    }
+  }
+
   function separate(dt) {
     for (let i = 0; i < spiders.length; i++) {
       for (let j = i + 1; j < spiders.length; j++) {
         const a = spiders[i], b = spiders[j];
         let dx = b.st.x - a.st.x, dy = b.st.y - a.st.y;
         let d = Math.hypot(dx, dy);
-        const minD = 34 * (a.k + b.k) / 2;
+        const minD = 48 * (a.k + b.k) / 2;
         if (d >= minD) continue;
         if (d < 0.01) {
           const ang = rand(0, TAU);
@@ -1571,6 +1856,7 @@
 
     updateFlies(dt);
     updateWebs(dt);
+    updateButterflies(dt);
     if (spiders.length > 1) separate(dt);
     for (const s of spiders) s.tick(dt, now);
   }

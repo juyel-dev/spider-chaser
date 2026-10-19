@@ -22,8 +22,8 @@ function run(seed, opts) {
 
   const stats = {
     errors: new Map(), nan: 0, dropShows: 0,
-    created: { spider: 0, fly: 0, web: 0 }, removed: { spider: 0, fly: 0, web: 0 },
-    webLines: 0, flyDraws: 0, spiderDraws: 0, maxCanvases: 0, eatFrames: 0
+    created: { spider: 0, fly: 0, web: 0, butterfly: 0 }, removed: { spider: 0, fly: 0, web: 0, butterfly: 0 },
+    webLines: 0, flyDraws: 0, spiderDraws: 0, butterflyDraws: 0, maxCanvases: 0, eatFrames: 0
   };
   const allCanvases = [];
   let nowMs = 0;
@@ -120,10 +120,10 @@ function run(seed, opts) {
   class FakeMO { observe() {} }
 
   const fn = new Function(
-    'window', 'document', 'chrome', 'performance', 'requestAnimationFrame', 'MutationObserver', 'location', 'Math',
+    'window', 'document', 'chrome', 'performance', 'requestAnimationFrame', 'MutationObserver', 'location', 'Math', 'Path2D',
     code
   );
-  fn(win, doc, chromeStub, perf, cb => { rafQueue.push(cb); return rafQueue.length; }, FakeMO, { hostname: 'example.com' }, FakeMath);
+  fn(win, doc, chromeStub, perf, cb => { rafQueue.push(cb); return rafQueue.length; }, FakeMO, { hostname: 'example.com' }, FakeMath, class Path2D {});
   if (storageCb) storageCb();
 
   function fire(type, ev) {
@@ -135,6 +135,7 @@ function run(seed, opts) {
 
   function typeOf(el) {
     if (el.style.width === '36px') return 'fly';
+    if (el.style.width === '96px') return 'butterfly';
     if (el.style.cssText && el.style.cssText.includes('will-change:transform')) return 'web';
     return 'spider';
   }
@@ -162,8 +163,8 @@ function run(seed, opts) {
     if (changedListener) {
       if (Math.abs(t - 200) < 0.009) changedListener({ size: { newValue: 1.8 }, count: { newValue: 3 } }, 'local');
       if (Math.abs(t - 300) < 0.009) changedListener({ size: { newValue: 0.7 }, count: { newValue: 1 }, speed: { newValue: 1.8 } }, 'local');
-      if (Math.abs(t - 400) < 0.009) changedListener({ flies: { newValue: false }, webs: { newValue: false }, drops: { newValue: false } }, 'local');
-      if (Math.abs(t - 450) < 0.009) changedListener({ flies: { newValue: true }, webs: { newValue: true }, drops: { newValue: true }, speed: { newValue: 1 } }, 'local');
+      if (Math.abs(t - 400) < 0.009) changedListener({ flies: { newValue: false }, webs: { newValue: false }, drops: { newValue: false }, butterfly: { newValue: false } }, 'local');
+      if (Math.abs(t - 450) < 0.009) changedListener({ flies: { newValue: true }, webs: { newValue: true }, drops: { newValue: true }, butterfly: { newValue: true }, speed: { newValue: 1 } }, 'local');
     }
 
     const q = rafQueue;
@@ -187,11 +188,13 @@ function run(seed, opts) {
     if (c.removed) stats.removed[ty]++;
     if (ty === 'web') stats.webLines += c.lines;
     if (ty === 'fly') stats.flyDraws += c.draws;
+    if (ty === 'butterfly') stats.butterflyDraws += c.draws;
     if (ty === 'spider') stats.spiderDraws += c.draws;
   }
   return stats;
 }
 
+let failed = false;
 for (const [seed, opts] of [
   [1, { seconds: 600 }],
   [2, { seconds: 600, count: 4, size: 1.3 }],
@@ -199,9 +202,14 @@ for (const [seed, opts] of [
 ]) {
   const t0 = Date.now();
   const s = run(seed, opts);
+  if (s.errors.size || s.nan) failed = true;
   console.log(`--- seed ${seed} ${JSON.stringify(opts)}  (${((Date.now() - t0) / 1000).toFixed(1)}s real)`);
   console.log('errors   :', s.errors.size ? [...s.errors.entries()].map(([k, v]) => `${v}x ${k}`).join('\n           ') : 'none');
   console.log('NaN transforms:', s.nan);
   console.log('canvases created:', JSON.stringify(s.created), ' removed:', JSON.stringify(s.removed), ' max live:', s.maxCanvases);
-  console.log('thread shown (web drops):', s.dropShows, ' web threads drawn:', s.webLines, ' fly draws:', s.flyDraws, ' frames eating a catch:', s.eatFrames);
+  console.log('thread shown (web drops):', s.dropShows, ' web threads drawn:', s.webLines, ' fly draws:', s.flyDraws, ' frames eating a catch:', s.eatFrames, ' butterfly draws:', s.butterflyDraws);
+}
+if (failed) {
+  console.error('FAILED: runtime errors or NaN positions found');
+  process.exit(1);
 }

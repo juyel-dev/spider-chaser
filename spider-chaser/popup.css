@@ -26,6 +26,15 @@ h1 {
 
 .row { display: flex; align-items: center; justify-content: space-between; }
 
+/* the four on/off switches sit in a 2 x 2 grid so the popup stays short */
+.toggles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 22px;
+  margin-bottom: 12px;
+}
+.toggles .control { margin-bottom: 0; }
+
 .label {
   display: flex;
   justify-content: space-between;

@@ -1,0 +1,1 @@
+{"name":"spider-chaser-tools","private":true,"description":"dev tools (smoke test, screenshots)","dependencies":{"puppeteer-core":"^25.13.0"}}

@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>popup frame</title></head>
+<body>
+<script>
+  // fake the extension APIs the popup uses, then render the real popup.html / popup.js
+  window.chrome = {
+    storage: {
+      local: {
+        get(defaults, cb) {
+          cb({ ...defaults, speed: 1.2, size: 1.2, count: 3, blocked: ['video.example.com', 'shop.example.net'] });
+        },
+        set() {}
+      }
+    },
+    tabs: { query(q, cb) { cb([{ url: 'https://garden.example.org/autumn' }]); } }
+  };
+  fetch('/spider-chaser/popup.html').then(r => r.text()).then(html => {
+    html = html
+      .replace('href="popup.css"', 'href="/spider-chaser/popup.css"')
+      .replace('<script src="popup.js"><\/script>', '<script src="/spider-chaser/popup.js"><\/script>');
+    document.open();
+    document.write(html);
+    document.close();
+  });
+</script>
+</body>
+</html>

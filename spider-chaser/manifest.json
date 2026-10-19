@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Spider Chaser",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Realistic walking spiders that stalk your mouse across webpages.",
   "permissions": ["storage", "activeTab"],
   "content_scripts": [

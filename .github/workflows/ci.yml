@@ -1,0 +1,27 @@
+name: CI
+
+# Quick checks on every push / pull request: syntax, manifest, and a 10-minute headless simulation
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Syntax check
+        run: |
+          node --check spider-chaser/content.js
+          node --check spider-chaser/popup.js
+
+      - name: Manifest is valid JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('spider-chaser/manifest.json','utf8')); console.log('manifest ok')"
+
+      - name: Headless simulation (fails on any runtime error)
+        run: node test/sim.js

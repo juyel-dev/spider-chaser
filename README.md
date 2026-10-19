@@ -11,12 +11,23 @@ stalk your mouse cursor in short bursts, and do a lot more:
 - **Hunt flies** — a fly lands, the spider ambushes it (the fly may escape), then eats it wrapped in silk
 - **Weave webs** — walk to a screen corner and weave a web strand by strand: spokes first, then the rings
 - **Wander** — roam around by themselves when the cursor leaves the window
+- **A butterfly** — a colourful butterfly (monarch, blue, yellow or purple) flutters around the page on its own, glides, lands and slowly opens and closes its wings, keeps away from the spiders, and leaves after a while
 
 Spiders never block clicks and never touch the page content — they are drawn on a small canvas overlay.
 
+![Spider Chaser](docs/screenshots/00-hero.png)
+
+| | |
+|---|---|
+| ![stalking the cursor](docs/screenshots/01-stalking.png) | ![hanging on a silk thread](docs/screenshots/02-silk-drop.png) |
+| ![weaving a web](docs/screenshots/03-weaving-web.png) | ![eating a fly](docs/screenshots/04-eating-fly.png) |
+| ![butterfly](docs/screenshots/06-butterfly.png) | ![popup](docs/screenshots/05-popup.png) |
+
+_(Screenshots are generated with real headless Chrome by `test/shoot.js` — locally, or with the **Screenshots** GitHub Action; see Development.)_
+
 ## Install (from source)
 
-Or grab `spider-chaser-1.6.0.zip` from the [Releases](https://github.com/juyel-dev/spider-chaser/releases) page, unzip it, and load that folder the same way (steps 2–4 below).
+Or grab `spider-chaser-1.7.0.zip` from the [Releases](https://github.com/juyel-dev/spider-chaser/releases) page, unzip it, and load that folder the same way (steps 2–4 below).
 
 1. Download or clone this repository
 2. Open `chrome://extensions` and turn on **Developer mode**
@@ -25,7 +36,7 @@ Or grab `spider-chaser-1.6.0.zip` from the [Releases](https://github.com/juyel-d
 
 ## Settings (toolbar icon)
 
-Speed · Size · Number of spiders (1–6) · Web drops / Flies / Webs on-off · "Disable on this site" with a list of disabled sites.
+Speed · Size · Number of spiders (1–6) · Web drops / Flies / Webs / Butterfly on-off · "Disable on this site" with a list of disabled sites.
 
 Keyboard: `Alt+S` hides the spiders on the current tab, `Alt+R` resets their positions.
 
@@ -34,7 +45,9 @@ Keyboard: `Alt+S` hides the spiders on the current tab, `Alt+R` resets their pos
 ```
 spider-chaser/   the extension (manifest.json, content.js, popup.*, icons/)
 test/sim.js      headless smoke test — runs content.js against a fake page for 10 simulated minutes
-publish/         store listing text and privacy policy
+test/shoot.js    takes the screenshots with real headless Chrome (test/demo/ is the demo page)
+.github/         CI (syntax + simulation) and the Screenshots workflow
+publish/         store listing text, privacy policy, build-zip.cmd
 ```
 
 Run the smoke test (needs Node.js):

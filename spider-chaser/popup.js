@@ -1,10 +1,11 @@
-const DEFAULTS = { enabled: true, speed: 1, size: 1, count: 1, drops: true, flies: true, webs: true, blocked: [] };
+const DEFAULTS = { enabled: true, speed: 1, size: 1, count: 1, drops: true, flies: true, webs: true, butterfly: true, blocked: [] };
 
 const $ = id => document.getElementById(id);
 const enabled = $('enabled');
 const drops = $('drops');
 const flies = $('flies');
 const webs = $('webs');
+const butterfly = $('butterfly');
 const sliders = {
   speed: { input: $('speed'), out: $('speedOut'), fmt: v => Number(v).toFixed(1) + '×' },
   size:  { input: $('size'),  out: $('sizeOut'),  fmt: v => Number(v).toFixed(1) + '×' },
@@ -69,6 +70,7 @@ function render(s) {
   drops.checked = s.drops !== false;
   flies.checked = s.flies !== false;
   webs.checked = s.webs !== false;
+  butterfly.checked = s.butterfly !== false;
   for (const key of Object.keys(sliders)) {
     const { input, out, fmt } = sliders[key];
     input.value = s[key];
@@ -106,6 +108,10 @@ flies.addEventListener('change', () => {
 
 webs.addEventListener('change', () => {
   chrome.storage.local.set({ webs: webs.checked });
+});
+
+butterfly.addEventListener('change', () => {
+  chrome.storage.local.set({ butterfly: butterfly.checked });
 });
 
 for (const key of Object.keys(sliders)) {

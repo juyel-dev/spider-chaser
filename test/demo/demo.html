@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Garden notes</title>
+<style>
+  html { scrollbar-width: none; }
+  html::-webkit-scrollbar { display: none; }
+  body { margin: 0; min-height: 100vh; font: 18px/1.7 Georgia, "Times New Roman", serif; color: #222; background: #faf8f4; }
+  html.dark body { background: #15171a; color: #d8d8d8; }
+  html.dark .meta { color: #8a8f96; }
+  body.plain { background: linear-gradient(135deg, #f6efe3, #e6d6bc); }
+  body.plain main { display: none; }
+  main { max-width: 700px; margin: 0 auto; padding: 70px 24px 120px; }
+  h1 { font-size: 40px; line-height: 1.2; margin: 0 0 8px; }
+  h2 { font-size: 24px; margin: 34px 0 6px; }
+  .meta { color: #777; font: 14px system-ui, sans-serif; margin-bottom: 28px; }
+  #fakecur { position: fixed; left: -60px; top: -60px; width: 22px; height: 30px; pointer-events: none; z-index: 2147483000; }
+</style>
+</head>
+<body>
+<main>
+  <h1>A slow walk through the autumn garden</h1>
+  <div class="meta">Garden notes · 6 min read</div>
+
+  <p>By the second week of October the garden has settled into its quiet routine. The tomato vines are
+  bare, the last marigolds hold on by the fence, and the mornings smell of wet leaves and cold soil.
+  It is the best time of year to just walk around with a cup of tea and look closely at things.</p>
+
+  <h2>What to look for</h2>
+  <p>Start low. The beds that looked finished in summer are full of small activity: beetles working
+  through the mulch, snails parked under the lip of a flowerpot, and early morning dew sitting on
+  every thread and stem. Dew is the easiest way to see how many webs a garden really has — a hedge
+  that seemed empty at noon turns into a field of tiny silver bowls at sunrise.</p>
+
+  <p>Move on to the fence line. Old wood collects moss on the north side and warmth on the south,
+  and the two sides host completely different neighbours. The sunny boards are crowded with snails
+  and ladybirds waiting out the cold, while the damp side keeps woodlice and centipedes.</p>
+
+  <h2>Letting things be</h2>
+  <p>It is tempting to tidy everything before winter. Cut back the dead stems, rake every leaf,
+  clear the corners. But most of what lives in a garden spends the cold months inside those
+  stems, leaf piles and corners. Leaving a few untidy patches costs nothing and gives the whole
+  place somewhere to survive until spring.</p>
+
+  <p>A good compromise is to tidy the paths and the edges, where you walk, and leave the back of
+  the beds alone. By March, when the first warm afternoons arrive, the garden will already be
+  waking up without any help from you.</p>
+
+  <h2>A small checklist</h2>
+  <p>Before the first frost: bring the tender pots inside, empty the water butt a little so it
+  does not crack, collect seeds from the flowers you want next year, and write down what worked.
+  Notes made now save a lot of guessing in spring, and the garden will look different again by then.</p>
+</main>
+
+<svg id="fakecur" viewBox="0 0 22 30" xmlns="http://www.w3.org/2000/svg">
+  <path d="M2 2 L2 23 L7.6 18 L11.6 27 L15 25.5 L11 16.6 L18.6 16.6 Z" fill="#fff" stroke="#111" stroke-width="1.6" stroke-linejoin="round"/>
+</svg>
+
+<script>
+  const q = new URLSearchParams(location.search);
+  const shot = q.get('shot') || 'walk';
+  const size = q.get('size') || '1';
+  const count = q.get('count') || '1';
+  if (shot === 'hero') document.body.classList.add('plain');
+  if (q.get('dark')) document.documentElement.classList.add('dark');
+
+  const cur = document.getElementById('fakecur');
+  function moveCursor(x, y) { cur.style.left = x + 'px'; cur.style.top = y + 'px'; }
+  window.addEventListener('pointermove', e => moveCursor(e.clientX, e.clientY), true);
+  // used by the screenshot script: put the (fake) cursor somewhere and tell the spiders
+  window.__mouse = (x, y) => {
+    window.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: y, bubbles: true }));
+    moveCursor(x, y);
+  };
+
+  // screenshots: window.__freeze = true holds the animation loop in place
+  const _raf = window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame = cb => _raf(function loop(ts) {
+    if (window.__freeze) _raf(loop); else cb(ts);
+  });
+
+  // load the real content.js, shortening the timers so each behaviour starts quickly
+  const BIG = 99999;
+  const t = { drop: BIG, build: BIG, fly: BIG, hunt: BIG };
+  if (shot === 'drop') t.drop = 0.3;
+  if (shot === 'web') t.build = 0.3;
+  if (shot === 'fly') { t.fly = 1; t.hunt = 0.5; }
+
+  fetch('/spider-chaser/content.js').then(r => r.text()).then(src => {
+    const rep = (a, b) => {
+      if (!src.includes(a)) console.error('PATCH MISSING: ' + a);
+      src = src.replace(a, b);
+    };
+    rep('const spiders = [];', 'const spiders = []; window.__spiders = spiders;');
+    rep('let butterfly = null;', 'let butterfly = null; window.__bf = () => butterfly;');
+    rep('size: 1, count: 1,', 'size: ' + size + ', count: ' + count + ',');
+    rep('cd: rand(40, 100)', 'cd: ' + t.drop);
+    rep('cd: rand(25, 60), rest: 0', 'cd: ' + t.build + ', rest: 0');
+    rep('let flyCd = rand(8, 20);', 'let flyCd = ' + t.fly + ';');
+    rep('cd: rand(3, 8), eatT: 0', 'cd: ' + t.hunt + ', eatT: 0');
+    rep('tick, setSize, scare, placeAt, onResize, invalidate, destroy,',
+        'tick, setSize, scare, placeAt, onResize, invalidate, destroy, ' +
+        'get _drop() { return drop; }, get _build() { return build; }, get _hunt() { return hunt; },');
+    new Function(src)();
+    window.__ready = true;
+  });
+</script>
+</body>
+</html>

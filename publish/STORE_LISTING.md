@@ -24,10 +24,11 @@ What they do:
 • Ambush a fly that lands on the page, and eat it
 • Weave a web in a screen corner, strand by strand, spokes first, then the rings
 • Wander around by themselves when the cursor leaves the window
+• A colourful butterfly flutters around the page on its own, glides, lands and flies away again
 
 Make it yours (toolbar icon):
 • Speed, size and number of spiders (up to 6)
-• Turn web drops, flies and webs on or off
+• Turn web drops, flies, webs and the butterfly on or off
 • Switch the spiders off on a single site with one click
 • Alt+S hides them on the current tab, Alt+R resets their positions
 
@@ -60,8 +61,10 @@ Show animated spiders that walk around web pages and follow the mouse cursor, as
   3. A corner web mid-weave with the spider on it
   4. The popup open (Speed / Size / Spiders / switches)
   5. A spider holding a wrapped fly
+  6. The butterfly on a page
+  (all of these are generated into `docs/screenshots/` by the "Screenshots" GitHub Action — download them from the Action's artifact or from the repo)
 - Small promo tile 440×280 (optional but helps): big spider on a plain light background
 - A short GIF/video of the thread drop or the fly pounce is the best thing for sharing on social media
 
 ## Version notes (first release)
-1.6.0 — first public release.
+1.7.0 — adds a butterfly, calmer walking and cleaner legs, thinner silk thread.
